@@ -19,27 +19,31 @@ class FuelRequest(BaseModel):
 
 
 # -----------------------------
-# Calculation Logic
+# Safe Calculation Logic
 # -----------------------------
 @app.post("/calculate_fuel")
 def calculate_fuel(data: FuelRequest):
 
-    # Base fuel needed
+    # Base fuel consumption
+    if data.fuel_efficiency_km_per_litre <= 0:
+        return {"error": "Fuel efficiency must be greater than zero"}
+
     base_fuel = data.distance_km / data.fuel_efficiency_km_per_litre
 
     # AC penalty
     ac_penalty = 0.1 if data.ac_on else 0.0
 
-    # Weight penalty (simple model)
-    weight_penalty = (data.passenger_weight_kg + data.luggage_weight_kg) * 0.0002
+    # Weight penalty
+    total_weight = data.passenger_weight_kg + data.luggage_weight_kg
+    weight_penalty = total_weight * 0.0002
 
     # City driving penalty
     city_penalty = data.city_ratio * 0.15
 
-    # Idle fuel consumption (litres per minute)
+    # Idle fuel consumption
     idle_fuel = data.idle_minutes * 0.02
 
-    # Total fuel needed
+    # Total fuel
     total_fuel = base_fuel * (1 + ac_penalty + weight_penalty + city_penalty) + idle_fuel
 
     # Total cost
