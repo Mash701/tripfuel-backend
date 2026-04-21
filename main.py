@@ -1,10 +1,22 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
 # -----------------------------
-# Updated Request Model
+# CORS (Required for frontend)
+# -----------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],          # Allow all origins (frontend)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# -----------------------------
+# Request Model
 # -----------------------------
 class FuelRequest(BaseModel):
     distance_km: float
@@ -19,15 +31,16 @@ class FuelRequest(BaseModel):
 
 
 # -----------------------------
-# Safe Calculation Logic
+# Fuel Calculation Logic
 # -----------------------------
 @app.post("/calculate_fuel")
 def calculate_fuel(data: FuelRequest):
 
-    # Base fuel consumption
+    # Validate efficiency
     if data.fuel_efficiency_km_per_litre <= 0:
         return {"error": "Fuel efficiency must be greater than zero"}
 
+    # Base fuel consumption
     base_fuel = data.distance_km / data.fuel_efficiency_km_per_litre
 
     # AC penalty
